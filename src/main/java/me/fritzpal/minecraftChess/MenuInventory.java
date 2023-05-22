@@ -44,11 +44,11 @@ public class MenuInventory implements InventoryHolder {
     }
 
     public ItemStack resignItem() {
-        return makeItem(Material.RED_WOOL, false, "§c§lResign", "§7Click to resign the game.");
+        return makeItem(Material.RED_WOOL, false, "§c§lResign", "§7Click to resign.");
     }
 
     public ItemStack exitItem() {
-        return makeItem(Material.BARRIER, false, "§cEnd Game", "§7Click to end the game.");
+        return makeItem(Material.BARRIER, false, "§cClose Game", "§7Click to reset the game.");
     }
 
     public ItemStack offerDrawItem() {

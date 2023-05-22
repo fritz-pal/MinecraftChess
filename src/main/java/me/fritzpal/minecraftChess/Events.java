@@ -8,7 +8,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
@@ -98,7 +97,8 @@ public class Events implements Listener {
     public void onWorldChange(PlayerChangedWorldEvent e) {
         for (ActiveGame game : plugin.getActiveGames()) {
             if (game.isPlayersGame(e.getPlayer())) {
-                game.endGame();
+                if(game.hasGameEnded()) game.disposeGame();
+                else game.endGame();
             }
         }
     }
@@ -107,7 +107,8 @@ public class Events implements Listener {
     public void onQuit(PlayerQuitEvent e) {
         for (ActiveGame game : plugin.getActiveGames()) {
             if (game.isPlayersGame(e.getPlayer())) {
-                game.endGame();
+                if(game.hasGameEnded()) game.disposeGame();
+                else game.endGame();
             }
         }
     }
@@ -115,26 +116,63 @@ public class Events implements Listener {
     @EventHandler
     public void onInvClick(InventoryClickEvent event) {
         Player p = (Player) event.getWhoClicked();
-        if (event.getClickedInventory() != null && event.getClickedInventory().getHolder() instanceof MenuInventory) {
+        ItemStack item = event.getCurrentItem();
+        if (item != null
+                && item.hasItemMeta()
+                && item.getItemMeta().hasDisplayName()
+                && item.getItemMeta().getDisplayName().equals(MenuInventory.gameMenuItem().getItemMeta().getDisplayName())){
+            p.performCommand("chess menu");
             event.setCancelled(true);
-            ItemStack item = event.getCurrentItem();
+        }
+
+        if (event.getClickedInventory() != null && event.getClickedInventory().getHolder() instanceof MenuInventory) {
+            MenuInventory holder = (MenuInventory) event.getClickedInventory().getHolder();
+            event.setCancelled(true);
             if (item == null) return;
             if (!item.hasItemMeta()) return;
             if (!item.getItemMeta().hasDisplayName()) return;
-            switch (item.getItemMeta().getDisplayName()) {
-                case "§c§lResign":
-                    //TODO
-                    break;
-                case "§aOffer Draw":
-                    //TODO
-                    break;
-                    //TODO
+            ActiveGame game = plugin.getActiveGame(p);
+            if (game == null) {
+                p.sendMessage("§cYou are not in a game!");
+                p.closeInventory();
+                return;
+            }
+            boolean isWhite = game.isWhite(p);
+
+            if (item.equals(holder.resignItem())) {
+                game.resign(p);
+                p.closeInventory();
+            } else if (item.equals(holder.offerDrawItem())) {
+                if (game.getMainBoard().hasOfferedDraw(isWhite)) {
+                    p.sendMessage("§cYou have already offered a draw!");
+                    p.closeInventory();
+                    return;
+                }
+                game.sendDrawMessage(game.getPlayer(!isWhite), p);
+                game.getMainBoard().offerDraw(isWhite);
+                p.closeInventory();
+            } else if (item.equals(holder.fenItem())) {
+                game.sendFenMessage(p);
+                p.closeInventory();
+            } else if (item.equals(holder.pgnItem())) {
+                game.sendPgnMessage(p);
+                p.closeInventory();
+            } else if (item.equals(holder.exitItem())) {
+                if(!game.hasGameEnded()) {
+                    p.sendMessage("§cYou can't close a game that hasn't ended!");
+                    p.closeInventory();
+                    return;
+                }
+                game.disposeGame();
+                p.closeInventory();;
             }
         }
     }
 
+
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         e.getPlayer().getInventory().remove(MenuInventory.gameMenuItem());
+
     }
 }

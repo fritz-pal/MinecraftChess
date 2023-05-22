@@ -122,49 +122,82 @@ public class ActiveGame {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (Tile t : tiles) {
-                    t.setChessPattern();
-                    t.remove();
-                }
-                white.getInventory().remove(MenuInventory.gameMenuItem());
-                black.getInventory().remove(MenuInventory.gameMenuItem());
-                plugin.removeGame(ActiveGame.this);
+                disposeGame();
             }
-        }.runTaskLater(plugin, 20 * 5);
+        }.runTaskLater(plugin, 20 * 60);
+    }
+
+    public boolean hasGameEnded() {
+        return state instanceof GameEndedState;
+    }
+
+    public void disposeGame() {
+        if (plugin.getActiveGame(id) == null) return;
+        for (Tile t : tiles) {
+            t.setChessPattern();
+            t.remove();
+        }
+        if (white.isOnline()) white.getInventory().remove(MenuInventory.gameMenuItem());
+        if (black.isOnline()) black.getInventory().remove(MenuInventory.gameMenuItem());
+        plugin.removeGame(this);
     }
 
     private void sendEndMsg(Player p) {
         if (p.isOnline()) {
             p.sendMessage("§a§l" + mainBoard.getResult().toString());
-            BaseComponent[] message = new ComponentBuilder()
-                    .append("§4§lPGN")
-                    .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, mainBoard.getPgn()))
-                    .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to copy!").create()))
-                    .create();
-            p.spigot().sendMessage(message);
+            sendPgnMessage(p);
         }
+    }
+
+    public void sendPgnMessage(Player p) {
+        BaseComponent[] message = new ComponentBuilder()
+                .append("§4§lPGN")
+                .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, mainBoard.getPgn()))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to copy!").create()))
+                .create();
+        p.spigot().sendMessage(message);
+    }
+
+    public void sendFenMessage(Player p) {
+        BaseComponent[] message = new ComponentBuilder()
+                .append("§4§lFEN")
+                .event(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, mainBoard.getFen()))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to copy!").create()))
+                .create();
+        p.spigot().sendMessage(message);
+    }
+
+    public void sendDrawMessage(Player p, Player from) {
+        p.playSound(p.getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 0.5f, 1);
+        p.sendMessage("§a" + from.getName() + " has offered a draw!");
+        BaseComponent[] message = new ComponentBuilder()
+                .append("§c§lACCEPT?")
+                .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/chess acceptdraw"))
+                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to accept the draw!").create()))
+                .create();
+        p.spigot().sendMessage(message);
     }
 
     public void sendPromotionOption(Vec2 pos) {
         BaseComponent[] msg = new ComponentBuilder()
                 .append(new ComponentBuilder()
                         .append("§6§lQueen")
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote!").create()))
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote to a queen!").create()))
                         .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/chess promote queen " + pos.getName())).create())
                 .append("§r§a│ ")
                 .append(new ComponentBuilder()
                         .append("§6§lRook")
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote!").create()))
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote to a rook!").create()))
                         .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/chess promote rook " + pos.getName())).create())
                 .append("§r§a│ ")
                 .append(new ComponentBuilder()
                         .append("§6§lBishop")
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote!").create()))
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote to a bishop!").create()))
                         .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/chess promote bishop " + pos.getName())).create())
                 .append("§r§a│ ")
                 .append(new ComponentBuilder()
                         .append("§6§lKnight")
-                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote!").create()))
+                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§7Click to promote to a knight!").create()))
                         .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/chess promote knight " + pos.getName())).create())
                 .create();
 
@@ -221,8 +254,17 @@ public class ActiveGame {
         return state;
     }
 
-    public String getName(boolean white) {
-        if (white) return this.white.getName();
-        else return this.black.getName();
+    public void resign(Player p) {
+        mainBoard.resign(isWhite(p));
+        endGame();
+    }
+
+    public boolean isWhite(Player p) {
+        return white.equals(p);
+    }
+
+    public Player getPlayer(boolean white) {
+        if (white) return this.white;
+        else return this.black;
     }
 }

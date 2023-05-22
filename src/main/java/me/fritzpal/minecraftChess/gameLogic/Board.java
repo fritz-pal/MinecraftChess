@@ -185,11 +185,10 @@ public class Board implements Cloneable {
         pgn.append("[Site \"Minecraft\"]\n");
         pgn.append("[Date \"").append(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))).append("\"]\n");
 
-        pgn.append("[White \"").append(game.getName(true).isEmpty() ? "?" : game.getName(true)).append("\"]\n");
+        pgn.append("[White \"").append(game.getPlayer(true).getName()).append("\"]\n");
         pgn.append("[WhiteElo \"?\"]\n");
 
-
-        pgn.append("[Black \"").append(game.getName(false).isEmpty() ? "?" : game.getName(false)).append("\"]\n");
+        pgn.append("[Black \"").append(game.getPlayer(false).getName()).append("\"]\n");
         pgn.append("[BlackElo \"?\"]\n");
 
         pgn.append("[Result \"").append(result.getNotation()).append("\"]\n");
@@ -700,9 +699,9 @@ public class Board implements Cloneable {
         return new Board(game, pieces, whiteTurn, enCroissant, whiteCastleQ, whiteCastleK, blackCastleQ, blackCastleK);
     }
 
-    public void resign() {
+    public void resign(boolean white) {
         if (result == Result.NOTFINISHED) {
-            result = whiteTurn ? Result.BLACKWONBYRESIGNATION : Result.WHITEWONBYRESIGNATION;
+            result = white ? Result.BLACKWONBYRESIGNATION : Result.WHITEWONBYRESIGNATION;
         }
     }
 
@@ -710,8 +709,8 @@ public class Board implements Cloneable {
         return white ? whiteOfferedDraw : blackOfferedDraw;
     }
 
-    public void offerDraw() {
-        if (whiteTurn) {
+    public void offerDraw(boolean white) {
+        if (white) {
             if (blackOfferedDraw) {
                 result = Result.DRAWBYAGREEMENT;
                 game.endGame();
