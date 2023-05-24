@@ -39,12 +39,14 @@ public class Commands implements CommandExecutor {
                     return true;
                 }
 
-                if(args[0].equals("acceptdraw")){
+                if (args[0].equals("acceptdraw")) {
                     ActiveGame game = plugin.getActiveGame(p);
-                    if(game == null) return true;
+                    if (game == null) return true;
                     boolean isWhite = game.isWhite(p);
-                    if(game.getMainBoard().hasOfferedDraw(!isWhite)){
+                    if (game.getMainBoard().hasOfferedDraw(!isWhite)) {
                         game.getMainBoard().offerDraw(isWhite);
+                    } else {
+                        p.sendMessage("§cDraw offer has expired! You can offer another draw in your menu.");
                     }
                     return true;
                 }

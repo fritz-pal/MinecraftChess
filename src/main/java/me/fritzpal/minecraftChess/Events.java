@@ -58,6 +58,10 @@ public class Events implements Listener {
             p.sendMessage("§cThis is not your game!");
             return;
         }
+        if(game.hasEnded()){
+            p.sendMessage("§cThe game has already ended!");
+            return;
+        }
         if (!game.isPlayersTurn(p)) {
             p.sendMessage("§cIt's not your turn!");
             return;
@@ -97,7 +101,7 @@ public class Events implements Listener {
     public void onWorldChange(PlayerChangedWorldEvent e) {
         for (ActiveGame game : plugin.getActiveGames()) {
             if (game.isPlayersGame(e.getPlayer())) {
-                if(game.hasGameEnded()) game.disposeGame();
+                if(game.hasEnded()) game.disposeGame();
                 else game.endGame();
             }
         }
@@ -107,7 +111,7 @@ public class Events implements Listener {
     public void onQuit(PlayerQuitEvent e) {
         for (ActiveGame game : plugin.getActiveGames()) {
             if (game.isPlayersGame(e.getPlayer())) {
-                if(game.hasGameEnded()) game.disposeGame();
+                if(game.hasEnded()) game.disposeGame();
                 else game.endGame();
             }
         }
@@ -140,9 +144,19 @@ public class Events implements Listener {
             boolean isWhite = game.isWhite(p);
 
             if (item.equals(holder.resignItem())) {
+                if(game.hasEnded()){
+                    p.sendMessage("§cThe game has already ended!");
+                    p.closeInventory();
+                    return;
+                }
                 game.resign(p);
                 p.closeInventory();
             } else if (item.equals(holder.offerDrawItem())) {
+                if(game.hasEnded()){
+                    p.sendMessage("§cThe game has already ended!");
+                    p.closeInventory();
+                    return;
+                }
                 if (game.getMainBoard().hasOfferedDraw(isWhite)) {
                     p.sendMessage("§cYou have already offered a draw!");
                     p.closeInventory();
@@ -158,7 +172,7 @@ public class Events implements Listener {
                 game.sendPgnMessage(p);
                 p.closeInventory();
             } else if (item.equals(holder.exitItem())) {
-                if(!game.hasGameEnded()) {
+                if(!game.hasEnded()) {
                     p.sendMessage("§cYou can't close a game that hasn't ended!");
                     p.closeInventory();
                     return;

@@ -127,7 +127,7 @@ public class ActiveGame {
         }.runTaskLater(plugin, 20 * 60);
     }
 
-    public boolean hasGameEnded() {
+    public boolean hasEnded() {
         return state instanceof GameEndedState;
     }
 

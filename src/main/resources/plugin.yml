@@ -5,5 +5,5 @@ api-version: 1.16
 main: me.fritzpal.minecraftChess.Main
 commands:
   chess:
-    description: Starts a game of chess
+    description: Start a game of chess
     usage: /chess <whitePlayer> <blackPlayer>
